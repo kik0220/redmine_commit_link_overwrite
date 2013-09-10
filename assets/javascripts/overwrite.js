@@ -1,26 +1,74 @@
 (function() {
-  "use strict";
-  function overwriteLink() {
-    var wikiEditables = document.getElementsByClassName('wiki editable');
-    for(var i = 0; i < wikiEditables.length; i++){
-      var wikiEditable = wikiEditables[i];
-      var ps = wikiEditable.getElementsByTagName('p');
-      for(var j = 0; j < ps.length; j++){
-        var content = ps[j].innerText;
-        var commitPosition = content.indexOf('|commit:');
-        if(commitPosition < 0){continue;}
-        var contentSplit = content.match(/ (.*):(.*)\|commit:(.*?) /);
-        var repositoryUrl = '';
-        if(contentSplit[1] !== null){
-          repositoryUrl = '/projects/'+contentSplit[1]+'/repository/'+contentSplit[2]+'/revisions/'+contentSplit[3];
-          var changeSet = content.match(/ (.*:.*\|commit:.*?) /)[1];
-          ps[j].innerHTML = ps[j].innerHTML.replace(changeSet, '<'+'a href='+repositoryUrl+' class="changeset">'+changeSet+'</a'+'>');
-//        } else {
-//          contentSplit = content.match(/(.*)|commit:(.*)/);
-//          repositoryUrl = document.location.origin+'/repository/'+contentSplit[1]+'/revisions/'+contentSplit[2];
+  function find_contents() {
+    var contents = []
+      , root = document.getElementById('history');
+
+    if (root) {
+      var notes = root.getElementsByClassName('wiki');
+      for (var i = 0; i < notes.length; ++i) {
+        var comments = notes[i].getElementsByTagName('p');
+        for (var j = 0; j < comments.length; ++j) {
+          contents.push(comments[j]);
         }
       }
     }
+
+    return contents;
   }
-  window.addEventListener('load', overwriteLink)
+
+  function find_commit_log(content) {
+    return {
+      beg: beg,
+      end: end,
+      project: identifier[0],
+      repository: identifier[1],
+      revision: content.slice(pos+key.length)
+    };
+  }
+
+  function convert_content(content, current_project) {
+    // Search for the following patterns:
+    //
+    // <repository>|commit:<revision>
+    // <project>:<repository>|commit:<revision>
+    //
+
+    var key = '|commit:'
+      , src = content.innerHTML
+      , pos = src.indexOf(key);
+
+    if (pos == -1) {
+      return;
+    }
+
+    var beg = src.lastIndexOf(' ', pos)
+      , end = src.indexOf(' ', pos);
+    if (beg == -1 || end == -1) {
+      return;
+    }
+
+    var identifier = src.slice(++beg, pos).split(':')
+      , repository = identifier.pop()
+      , project = identifier.pop() || current_project
+      , revision = src.slice(pos+key.length, end)
+      , url = '/projects/'+project+'/repository/'+repository+'/revisions/'+revision
+      , disp = project+':'+repository+'|'+revision.substr(0,8)
+      , link = '<a href="'+url+'" class="changeset">'+disp+'</a>';
+    content.innerHTML = src.slice(0, beg)+link+src.slice(end);
+  }
+
+  function main() {
+    var contents = find_contents()
+      , project = document.getElementById('main-menu')
+                   .getElementsByClassName('overview')[0]
+                   .getAttribute('href').split('/').pop();
+
+    for (var i = 0; i < contents.length; ++i) {
+      convert_content(contents[i], project);
+    }
+  }
+
+  document.addEventListener ?
+    window.addEventListener('load', main) :
+    window.attachEvent('onload', main);
 })();
