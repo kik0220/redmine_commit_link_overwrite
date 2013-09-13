@@ -1,5 +1,5 @@
-redmine_commit_link_overwrite
+Redmine Commit Link Overwrite plugin
 =============================
 
-Redmineでコミットのリンクが「プロジェクト:commit:レポジトリ|ハッシュ」になっているとリンクにならない問題を表面的に対応するプラグインです。
+Redmineでコミットのリンクが「project:commit:repository|hash」になっているとリンクにならない問題に表面的に対処するプラグインです。
 
